@@ -1,0 +1,223 @@
+from numpy import empty
+import pandas as pd
+import streamlit as st
+import json
+import matplotlib.pyplot as pypl
+from wordcloud import WordCloud
+import re
+import plotly.express as px
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem.porter import PorterStemmer
+from nltk.stem import WordNetLemmatizer
+from wordcloud import WordCloud
+from stop_words import get_stop_words
+import numpy as np
+
+def preprocess_dataframe(df,volume = None):
+
+    if volume != 'All volumes':
+        df = df[df['book name'] == volume]
+    else:
+        df = df
+
+    df.loc[df.rating != '','rating'] = df.loc[:,'rating'].apply(lambda x : str(x).replace('.0 out of 5 stars','').strip())
+    df = df.fillna('')
+
+    df.review_text = df.review_text.str.replace(r'[^\x00-\x7F]+','',regex=True)
+    df.title = df.title.str.replace(r'[^\x00-\x7F]+','',regex=True)
+
+    df['length'] = df['review_text'].apply(lambda x : len(str(x)))
+
+    return df
+
+def text_preprocess(text):
+
+    lemmatizer = WordNetLemmatizer()
+
+    stop_words = set(get_stop_words('en'))
+    stop_words.update(stopwords.words('english'))
+    contractions_dict = { "ain't": "are not","'s":" is","aren't": "are not",
+                        "can't": "cannot","can't've": "cannot have",
+                        "'cause": "because","could've": "could have","couldn't": "could not",
+                        "couldn't've": "could not have", "didn't": "did not","doesn't": "does not",
+                        "don't": "do not","hadn't": "had not","hadn't've": "had not have",
+                        "hasn't": "has not","haven't": "have not","he'd": "he would",
+                        "he'd've": "he would have","he'll": "he will", "he'll've": "he will have",
+                        "how'd": "how did","how'd'y": "how do you","how'll": "how will",
+                        "I'd": "I would", "I'd've": "I would have","I'll": "I will",
+                        "I'll've": "I will have","I'm": "I am","I've": "I have", "isn't": "is not",
+                        "it'd": "it would","it'd've": "it would have","it'll": "it will",
+                        "it'll've": "it will have", "let's": "let us","ma'am": "madam",
+                        "mayn't": "may not","might've": "might have","mightn't": "might not", 
+                        "mightn't've": "might not have","must've": "must have","mustn't": "must not",
+                        "mustn't've": "must not have", "needn't": "need not",
+                        "needn't've": "need not have","o'clock": "of the clock","oughtn't": "ought not",
+                        "oughtn't've": "ought not have","shan't": "shall not","sha'n't": "shall not",
+                        "shan't've": "shall not have","she'd": "she would","she'd've": "she would have",
+                        "she'll": "she will", "she'll've": "she will have","should've": "should have",
+                        "shouldn't": "should not", "shouldn't've": "should not have","so've": "so have",
+                        "that'd": "that would","that'd've": "that would have", "there'd": "there would",
+                        "there'd've": "there would have", "they'd": "they would",
+                        "they'd've": "they would have","they'll": "they will",
+                        "they'll've": "they will have", "they're": "they are","they've": "they have",
+                        "to've": "to have","wasn't": "was not","we'd": "we would",
+                        "we'd've": "we would have","we'll": "we will","we'll've": "we will have",
+                        "we're": "we are","we've": "we have", "weren't": "were not","what'll": "what will",
+                        "what'll've": "what will have","what're": "what are", "what've": "what have",
+                        "when've": "when have","where'd": "where did", "where've": "where have",
+                        "who'll": "who will","who'll've": "who will have","who've": "who have",
+                        "why've": "why have","will've": "will have","won't": "will not",
+                        "won't've": "will not have", "would've": "would have","wouldn't": "would not",
+                        "wouldn't've": "would not have","y'all": "you all", "y'all'd": "you all would",
+                        "y'all'd've": "you all would have","y'all're": "you all are",
+                        "y'all've": "you all have", "you'd": "you would","you'd've": "you would have",
+                        "you'll": "you will","you'll've": "you will have", "you're": "you are",
+                        "you've": "you have"}
+    
+    text = ' '.join([contractions_dict[word] if word in contractions_dict else word for word in text.split(' ')])
+    
+    text = re.sub('\W| |\d',' ',text)
+    
+    text = text.lower()
+    
+    text = word_tokenize(text)
+    
+    text = [word for word in text if word.lower() not in list(stop_words)]
+    
+    text = [lemmatizer.lemmatize(word,pos='v') for word in text]
+    
+    text = ' '.join(text)
+    
+    return text
+
+class plot_data():
+
+    def __init__(self,data):
+        self.data = data
+        self.fig = None
+    
+    def bar(self, x, y,orientation='v'):
+        self.fig = px.bar(self.data, x=x, y=y,orientation=orientation)
+    
+    def plot(self):
+        st.write(self.fig)
+
+    def set_title(self,title):
+
+        self.fig.update_layout(title = f"{title}")
+
+    def update_xaxes(self,title):
+        self.fig.update_xaxes(title=title)
+    
+    def update_yaxes(self,title):
+        self.fig.update_yaxes(title=title)
+
+@st.cache(persist=True, suppress_st_warning=True,allow_output_mutation=True)
+def load_data():
+    df = pd.read_json('Demon_Slayer-reviews_cleaned.json')
+    return df
+
+df = load_data()
+
+volume_names = list(df['book name'].unique())
+volume_names.append('All volumes')
+
+volume = st.selectbox('Choose volume ',volume_names)
+
+if volume != 'All volumes':
+    df = preprocess_dataframe(df,volume)
+else:
+    df = preprocess_dataframe(df,volume)
+
+# Number of ratings per volume
+
+rating_counts = df.rating.value_counts()
+
+rat_plot = plot_data(rating_counts)
+rat_plot.bar(y='rating', x=rating_counts.index)
+rat_plot.set_title(f'Rating of {volume}')
+rat_plot.update_xaxes('Rating')
+rat_plot.update_yaxes('Count')
+rat_plot.plot()
+
+text_category = st.selectbox('Which category to analyze ?',['review_text','title'])
+
+num_of_wordcloud_words = st.slider("Number of words to display in the word cloud",100,500)
+rating_number = st.select_slider("Rating",[1,2,3,4,5])
+
+# Wordcloud showing the most common words
+def wordcloud(text,max_words):
+
+    print(text)
+
+    if text.empty:
+        st.info("There are no reviews under this rating for this volume")
+    else:
+        wc = WordCloud(width=400, height=300, max_words=max_words, colormap="Dark2",scale=4, max_font_size=50).generate(text.str.cat(sep="\n"))
+        fig = pypl.figure(figsize=(20,10))
+        pypl.imshow(wc, interpolation='bilinear')
+        pypl.axis("off")
+        st.pyplot(fig)
+    
+
+wordcloud(df.loc[df['rating'] == str(rating_number),text_category],num_of_wordcloud_words)
+
+# Most Frequent Words
+
+num_of_words = st.slider("Number of most frequent words",5,20)
+
+reviews = df.loc[df['rating'] == str(rating_number),text_category].apply(lambda x : text_preprocess(x))
+if reviews.empty:
+    st.info("There are no reviews under this rating for this volume")
+else:
+    most_freq_words = pd.DataFrame(reviews.str.split(expand=True).stack().value_counts(),columns=['Count'])[:num_of_words]
+        
+    review_plot = plot_data(most_freq_words.sort_values(by='Count'))
+    review_plot.bar(x='Count', y=most_freq_words.index,orientation='h')
+    review_plot.set_title(f'Most Frequent Words')
+    review_plot.update_xaxes('Count')
+    review_plot.update_yaxes('Words')
+    review_plot.plot()
+
+# Most relevant topics
+
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+
+def get_topics(n_gram_range,no_of_topics,df,text_type):
+
+    vec = CountVectorizer(ngram_range=n_gram_range)
+    df[text_type] = df[text_type].apply(lambda x : text_preprocess(x))
+
+    x = vec.fit_transform(df[text_type].values)
+    
+    lda10 = LatentDirichletAllocation(n_components=no_of_topics, random_state=42)
+    
+    lda10.fit_transform(x)
+    
+    topi = []
+    topic_no = []
+    top_n = 10
+    arces = []
+
+    for idx, topic in enumerate(lda10.components_):
+         
+         for i in topic.argsort()[:-top_n-1:-1]:
+                topi.append((vec.get_feature_names()[i]))
+         
+         arces.append(topi[:])
+         topic_no.append(f'Topic {idx+1}')
+         topi.clear()
+    
+    return topic_no, arces
+
+topic_no, arces = get_topics((2,2),3,df.loc[df['rating'] == str(rating_number)],text_category)
+
+drf_df = pd.DataFrame(dict(zip(topic_no,arces)))
+print(drf_df)
+
+selected_topic = st.multiselect('Select topic:',drf_df.columns,drf_df.columns[0])
+st.table(drf_df[selected_topic])
+
+
