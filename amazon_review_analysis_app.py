@@ -115,7 +115,7 @@ class plot_data():
 
 @st.cache(persist=True, suppress_st_warning=True,allow_output_mutation=True)
 def load_data():
-    df = pd.read_json('Demon_Slayer-reviews_cleaned.json')
+    df = pd.read_json(r'data/Demon_Slayer-reviews_cleaned.json')
     return df
 
 df = load_data()
