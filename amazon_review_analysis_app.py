@@ -5,11 +5,17 @@ import matplotlib.pyplot as pypl
 from wordcloud import WordCloud
 import re
 import plotly.express as px
+import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from wordcloud import WordCloud
 from stop_words import get_stop_words
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+
+nltk.download('wordnet')
+nltk.download('stopwords')
 
 # preprocess the dataset 
 def preprocess_dataframe(df,volume = None):
@@ -183,9 +189,6 @@ else:
     st.write(review_plot)
 
 # Most relevant topics
-
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.decomposition import LatentDirichletAllocation
 
 def get_topics(n_gram_range,no_of_topics,df,text_type):
 
