@@ -14,9 +14,6 @@ from stop_words import get_stop_words
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
 
-nltk.download('wordnet')
-nltk.download('stopwords')
-nltk.download('punkt')
 
 # preprocess the dataset 
 def preprocess_dataframe(df,volume = None):
