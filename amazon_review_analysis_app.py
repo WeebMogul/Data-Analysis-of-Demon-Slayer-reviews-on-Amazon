@@ -1,18 +1,15 @@
 from numpy import empty
 import pandas as pd
 import streamlit as st
-import json
 import matplotlib.pyplot as pypl
 from wordcloud import WordCloud
 import re
 import plotly.express as px
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
-from nltk.stem.porter import PorterStemmer
 from nltk.stem import WordNetLemmatizer
 from wordcloud import WordCloud
 from stop_words import get_stop_words
-import numpy as np
 
 # preprocess the dataset 
 def preprocess_dataframe(df,volume = None):
