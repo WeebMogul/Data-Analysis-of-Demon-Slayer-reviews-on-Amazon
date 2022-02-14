@@ -17,6 +17,7 @@ from sklearn.decomposition import LatentDirichletAllocation
 
 nltk.download('stopwords')
 nltk.download('punkt')
+nltk.download('wordnet')
 
 # preprocess the dataset 
 def preprocess_dataframe(df,volume = None):
