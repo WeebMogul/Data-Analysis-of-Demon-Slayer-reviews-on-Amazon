@@ -15,6 +15,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
 
 
+nltk.download('stopwords')
+
 # preprocess the dataset 
 def preprocess_dataframe(df,volume = None):
 
