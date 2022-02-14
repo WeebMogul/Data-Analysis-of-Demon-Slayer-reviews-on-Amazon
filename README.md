@@ -1,4 +1,4 @@
-# Data Analysis of Demon Slayer reviews on Amazon
+# Data Analysis of user reviews of Demon Slayer manga on Amazon
 Hello, everyone. 
 
 My main motivation for this project was to have a collected analysis of every volume of Demon Slayer if there was a time I would by the entire set. 
